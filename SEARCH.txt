@@ -1,0 +1,35 @@
+Cómo buscar en Catdex
+=====================
+
+La búsqueda mira los hechos ya cargados. Al abrir, la app pide todos
+los gatos que la API permite (lotes de 500 hasta que no aparezcan
+nuevos). Eso puede tardar. Luego la caja solo filtra esa lista local,
+salvo el caso de un id que se explica más abajo.
+
+Tipo
+----
+Solo se cargan hechos de gatos (type = cat). No hay perros ni caballos.
+
+
+Caja de búsqueda
+----------------
+
+  lincoln        coincide con el hecho de Mary Todd Lincoln
+  Lincol         también coincide (substring)
+  todd lincoln   no coincide (esas palabras no están juntas)
+
+
+Enviar frente a escribir
+------------------------
+Al escribir se filtra la lista local al momento.
+
+Al pulsar Search ocurre lo mismo y ADEMÁS se llama GET /facts/:id
+si la consulta es un id hexadecimal de 24 caracteres que aún no
+está en memoria.
+
+Paginación
+----------
+La búsqueda filtra toda la lista cargada. En pantalla solo se muestran
+24 hechos por página (Prev / Next). El número #001 es el de la lista
+filtrada, no solo el de la página visible.
+
