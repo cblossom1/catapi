@@ -1,14 +1,17 @@
 const API = "https://catfacts.wohlbruck.dev";
 
 const CACHE_KEY = "catdex-cache-v4";
+const NAMES_KEY = "catdex-names-v1";
 const BATCH_SIZE = 500;
 const MAX_BATCHES = 8;
 const PAGE_SIZE = 24;
+const HISTORY_LIMIT = 50;
 
 const state = {
   facts: [],
   filtered: [],
   selectedId: null,
+  history: [],
   query: "",
   type: "all",
   view: "list",
@@ -34,57 +37,34 @@ const els = {
   pageNext: document.getElementById("page-next"),
 };
 
+// Pantalla de bienvenida original, para restaurarla al volver a la lista.
+const welcomeHTML = els.detail.innerHTML;
+
+/* =========================================================
+   NOMBRES ÚNICOS
+========================================================= */
+
 const CAT_NAMES = [
-  "Milo",
-  "Luna",
-  "Simba",
-  "Nala",
-  "Cleo",
-  "Oliver",
-  "Misha",
-  "Leo",
-  "Mochi",
-  "Nina",
-  "Toby",
-  "Kira",
-  "Salem",
-  "Coco",
-  "Theo",
-  "Loki",
-  "Maya",
-  "Bowie",
-  "Chloe",
-  "Tom",
-  "Kiwi",
-  "Sushi",
-  "Roma",
-  "Bruno",
-  "Mia",
-  "Felix",
-  "Nube",
-  "Gala",
-  "Gudy",
-  "Lia",
-  "Cosmo",
-  "Mango",
-  "Neko",
-  "Shadow",
-  "Simon",
-  "Dante",
-  "Frida",
-  "Mora",
-  "Pixel",
-  "Olivia",
-  "Max",
-  "Cinnamon",
-  "Tao",
-  "Zoe",
-  "Ringo",
-  "Lola",
-  "Bambi",
-  "Ciro",
-  "Uma",
-  "Koda",
+  "Milo","Luna","Simba","Nala","Cleo","Oliver","Misha","Leo","Mochi","Nina",
+  "Toby","Kira","Salem","Coco","Theo","Loki","Maya","Bowie","Chloe","Tom",
+  "Kiwi","Sushi","Roma","Bruno","Mia","Felix","Nube","Gala","Gudy","Lia",
+  "Cosmo","Mango","Neko","Shadow","Simon","Dante","Frida","Mora","Pixel","Olivia",
+  "Max","Cinnamon","Tao","Zoe","Ringo","Lola","Bambi","Ciro","Uma","Koda",
+  "Aria","Bella","Charlie","Daisy","Emma","Finn","Ginger","Hazel","Iris","Jasper",
+  "Kaya","Lucky","Mimi","Nori","Oreo","Pepe","Quincy","Rosie","Sasha","Tigre",
+  "Yuki","Zuri","Abby","Bimba","Canela","Duna","Elsa","Fiona","Gaia","Hana",
+  "Indie","Jade","Kenzo","Lulu","Momo","Nico","Ophelia","Pipa","Rocky","Sol",
+  "Tina","Vera","Wendy","Xena","Yoko","Zeus","Alma","Bali","Cala","Dulce",
+  "Eco","Flor","Gizmo","Hugo","Ivy","Juno","Kobe","Lima","Miel","Nata",
+  "Olaf","Paco","Reina","Sami","Tula","Vito","Willow","Yara","Zafiro","Argo",
+];
+
+const CAT_SURNAMES = [
+  "Bean","Muffin","Whiskers","Paws","Biscuit","Sprinkle","Pudding","Button",
+  "Cupcake","Marshmallow","Noodle","Peach","Sugar","Cloud","Pebble","Fluff",
+  "Honey","Berry","Sparkle","Toast","Waffle","Pickle","Jelly","Dumpling",
+  "Cookie","Truffle","Velvet","Comet","Clover","Maple","Olive","Pepper",
+  "Poppy","Sunny","Twinkle","Wisp","Zephyr","Bubbles","Sesame","Latte",
 ];
 
 const CAT_TRAITS = [
@@ -111,6 +91,114 @@ function hashNumber(value) {
   return hash;
 }
 
+const nameRegistry = {
+  byId: new Map(),
+  used: new Set(),
+};
+
+let nameSaveTimer = null;
+
+function loadNameRegistry() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(NAMES_KEY) || "{}"
+    );
+
+    Object.entries(saved).forEach(([id, name]) => {
+      const key = String(name).toLowerCase();
+
+      if (!nameRegistry.used.has(key)) {
+        nameRegistry.byId.set(id, name);
+        nameRegistry.used.add(key);
+      }
+    });
+  } catch {
+    // Continue with an empty registry.
+  }
+}
+
+function saveNameRegistry() {
+  clearTimeout(nameSaveTimer);
+
+  nameSaveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(
+        NAMES_KEY,
+        JSON.stringify(
+          Object.fromEntries(nameRegistry.byId)
+        )
+      );
+    } catch {
+      // Names stay unique for this session anyway.
+    }
+  }, 400);
+}
+
+function isNameFree(name) {
+  return !nameRegistry.used.has(name.toLowerCase());
+}
+
+function pickUniqueName(id) {
+  const h = hashNumber(id);
+  const total = CAT_NAMES.length;
+  const sTotal = CAT_SURNAMES.length;
+  const offset = (h >> 5) % sTotal;
+
+  // 1. Nombres simples primero.
+  for (let k = 0; k < total; k += 1) {
+    const candidate = CAT_NAMES[(h + k) % total];
+
+    if (isNameFree(candidate)) {
+      return candidate;
+    }
+  }
+
+  // 2. Nombre + apellido.
+  for (let j = 0; j < sTotal; j += 1) {
+    for (let k = 0; k < total; k += 1) {
+      const candidate =
+        `${CAT_NAMES[(h + k) % total]} ` +
+        `${CAT_SURNAMES[(offset + j) % sTotal]}`;
+
+      if (isNameFree(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  // 3. Último recurso: agregar un número.
+  const base =
+    `${CAT_NAMES[h % total]} ${CAT_SURNAMES[offset]}`;
+
+  let n = 2;
+
+  while (!isNameFree(`${base} ${n}`)) {
+    n += 1;
+  }
+
+  return `${base} ${n}`;
+}
+
+function catName(fact) {
+  const id = fact._id;
+
+  if (nameRegistry.byId.has(id)) {
+    return nameRegistry.byId.get(id);
+  }
+
+  const name = pickUniqueName(id);
+
+  nameRegistry.byId.set(id, name);
+  nameRegistry.used.add(name.toLowerCase());
+  saveNameRegistry();
+
+  return name;
+}
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
 function keepFact(fact) {
   if (!fact?._id || fact.deleted) {
     return false;
@@ -130,87 +218,55 @@ function sourceLabel(source) {
 }
 
 function entryNumber(fact, index) {
-  const n =
-    (index ?? hashNumber(fact._id) % 900) + 1;
+  const n = (index ?? hashNumber(fact._id) % 900) + 1;
 
   return String(n).padStart(3, "0");
 }
 
-function catName(fact) {
-  const index =
-    hashNumber(fact._id) % CAT_NAMES.length;
-
-  return CAT_NAMES[index];
-}
-
 function catTrait(fact) {
-  const text = String(
-    fact.text || ""
-  ).toLowerCase();
+  const text = String(fact.text || "").toLowerCase();
 
-  if (
-    /sleep|sleeping|sleepy|nap/.test(text)
-  ) {
+  if (/sleep|sleeping|sleepy|nap/.test(text)) {
     return "Sleepy";
   }
 
-  if (
-    /hunt|hunting|hunter|predator|prey/.test(text)
-  ) {
+  if (/hunt|hunting|hunter|predator|prey/.test(text)) {
     return "Natural Hunter";
   }
 
-  if (
-    /water|drink|drinking|swim/.test(text)
-  ) {
+  if (/water|drink|drinking|swim/.test(text)) {
     return "Water Lover";
   }
 
-  if (
-    /food|eat|eating|diet|meal/.test(text)
-  ) {
+  if (/food|eat|eating|diet|meal/.test(text)) {
     return "Big Appetite";
   }
 
-  if (
-    /eye|eyes|vision|sight/.test(text)
-  ) {
+  if (/eye|eyes|vision|sight/.test(text)) {
     return "Curious Gaze";
   }
 
-  if (
-    /sound|hear|hearing|ear/.test(text)
-  ) {
+  if (/sound|hear|hearing|ear/.test(text)) {
     return "Sensitive Hearing";
   }
 
-  if (
-    /smell|scent|olfactory|nose/.test(text)
-  ) {
+  if (/smell|scent|olfactory|nose/.test(text)) {
     return "Sharp Sense of Smell";
   }
 
-  if (
-    /hair|fur|coat|whisker/.test(text)
-  ) {
+  if (/hair|fur|coat|whisker/.test(text)) {
     return "Distinctive Coat";
   }
 
-  if (
-    /kitten|young|baby|play|playing/.test(text)
-  ) {
+  if (/kitten|young|baby|play|playing/.test(text)) {
     return "Playful Spirit";
   }
 
-  if (
-    /human|people|owner|person|social/.test(text)
-  ) {
+  if (/human|people|owner|person|social/.test(text)) {
     return "Sociable";
   }
 
-  const index =
-    (hashNumber(fact._id) >> 4) %
-    CAT_TRAITS.length;
+  const index = (hashNumber(fact._id) >> 4) % CAT_TRAITS.length;
 
   return CAT_TRAITS[index];
 }
@@ -224,44 +280,18 @@ function entryImage(fact) {
 function statBlock(fact) {
   const base = hashNumber(fact._id);
 
-  const curiosity =
-    40 + (base % 61);
-
-  const sociability =
-    35 + ((base >> 3) % 66);
-
-  const instinct =
-    45 + ((base >> 6) % 56);
-
-  const adaptability =
-    40 + ((base >> 9) % 61);
-
-  const energy =
-    30 + ((base >> 12) % 71);
-
   return [
-    {
-      label: "Curiosity",
-      value: curiosity,
-    },
-    {
-      label: "Sociability",
-      value: sociability,
-    },
-    {
-      label: "Instinct",
-      value: instinct,
-    },
-    {
-      label: "Adaptability",
-      value: adaptability,
-    },
-    {
-      label: "Energy",
-      value: energy,
-    },
+    { label: "Curiosity", value: 40 + (base % 61) },
+    { label: "Sociability", value: 35 + ((base >> 3) % 66) },
+    { label: "Instinct", value: 45 + ((base >> 6) % 56) },
+    { label: "Adaptability", value: 40 + ((base >> 9) % 61) },
+    { label: "Energy", value: 30 + ((base >> 12) % 71) },
   ];
 }
+
+/* =========================================================
+   CACHE Y RED
+========================================================= */
 
 function readDiskCache() {
   try {
@@ -307,21 +337,14 @@ async function fetchJson(
   }
 
   const request = (async () => {
-    const controller =
-      new AbortController();
+    const controller = new AbortController();
 
-    const timer = setTimeout(
-      () => controller.abort(),
-      timeout
-    );
+    const timer = setTimeout(() => controller.abort(), timeout);
 
     try {
-      const response = await fetch(
-        `${API}${path}`,
-        {
-          signal: controller.signal,
-        }
-      );
+      const response = await fetch(`${API}${path}`, {
+        signal: controller.signal,
+      });
 
       if (!response.ok) {
         throw new Error(
@@ -329,8 +352,7 @@ async function fetchJson(
         );
       }
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (cache) {
         memory.set(path, data);
@@ -352,10 +374,7 @@ async function fetchJson(
 
 function mergeFacts(incoming) {
   const unique = new Map(
-    state.facts.map((fact) => [
-      fact._id,
-      fact,
-    ])
+    state.facts.map((fact) => [fact._id, fact])
   );
 
   incoming
@@ -372,18 +391,9 @@ function mergeFacts(incoming) {
       });
     });
 
-  state.facts = [
-    ...unique.values(),
-  ].sort((a, b) => {
-    const av =
-      a.status?.verified === true
-        ? 0
-        : 1;
-
-    const bv =
-      b.status?.verified === true
-        ? 0
-        : 1;
+  state.facts = [...unique.values()].sort((a, b) => {
+    const av = a.status?.verified === true ? 0 : 1;
+    const bv = b.status?.verified === true ? 0 : 1;
 
     return av - bv;
   });
@@ -399,8 +409,7 @@ function showSkeletons() {
 async function loadCatalog() {
   els.empty.hidden = true;
 
-  const cached =
-    readDiskCache();
+  const cached = readDiskCache();
 
   if (cached?.facts?.length) {
     mergeFacts(cached.facts);
@@ -410,8 +419,7 @@ async function loadCatalog() {
     els.meta.textContent =
       `${state.filtered.length} records · loading archive…`;
   } else {
-    els.meta.textContent =
-      "Loading feline archive…";
+    els.meta.textContent = "Loading feline archive…";
 
     showSkeletons();
   }
@@ -422,15 +430,9 @@ async function loadCatalog() {
 async function refreshCatalog() {
   try {
     try {
-      const verified =
-        await fetchJson(
-          "/facts",
-          60000
-        );
+      const verified = await fetchJson("/facts", 60000);
 
-      mergeFacts(
-        [].concat(verified)
-      );
+      mergeFacts([].concat(verified));
 
       applyFilters();
     } catch {
@@ -440,32 +442,23 @@ async function refreshCatalog() {
     let previous = -1;
     let stalled = 0;
 
-    for (
-      let round = 1;
-      round <= MAX_BATCHES;
-      round += 1
-    ) {
+    for (let round = 1; round <= MAX_BATCHES; round += 1) {
       els.meta.textContent =
         `Exploring feline archive… ${state.facts.length} records ` +
         `(batch ${round}/${MAX_BATCHES})`;
 
       try {
-        const batch =
-          await fetchJson(
-            `/facts/random?animal_type=cat&amount=${BATCH_SIZE}&_=${round}`,
-            180000,
-            { cache: false }
-          );
-
-        mergeFacts(
-          [].concat(batch)
+        const batch = await fetchJson(
+          `/facts/random?animal_type=cat&amount=${BATCH_SIZE}&_=${round}`,
+          180000,
+          { cache: false }
         );
+
+        mergeFacts([].concat(batch));
 
         applyFilters();
 
-        writeDiskCache(
-          state.facts
-        );
+        writeDiskCache(state.facts);
       } catch {
         els.meta.textContent =
           `${state.facts.length} records · retrying batch ${round}…`;
@@ -473,10 +466,7 @@ async function refreshCatalog() {
         continue;
       }
 
-      if (
-        state.facts.length ===
-        previous
-      ) {
+      if (state.facts.length === previous) {
         stalled += 1;
 
         if (stalled >= 2) {
@@ -486,21 +476,16 @@ async function refreshCatalog() {
         stalled = 0;
       }
 
-      previous =
-        state.facts.length;
+      previous = state.facts.length;
     }
 
     if (!state.facts.length) {
-      throw new Error(
-        "The archive returned no records."
-      );
+      throw new Error("The archive returned no records.");
     }
 
     applyFilters();
 
-    writeDiskCache(
-      state.facts
-    );
+    writeDiskCache(state.facts);
   } catch (error) {
     if (state.facts.length) {
       els.meta.textContent =
@@ -509,8 +494,7 @@ async function refreshCatalog() {
       return;
     }
 
-    els.meta.textContent =
-      "Could not reach the archive.";
+    els.meta.textContent = "Could not reach the archive.";
 
     els.detail.innerHTML = `
       <div class="error-box">
@@ -520,32 +504,22 @@ async function refreshCatalog() {
   }
 }
 
+/* =========================================================
+   PAGINACIÓN Y FILTROS
+========================================================= */
+
 function pageCount() {
-  return Math.max(
-    1,
-    Math.ceil(
-      state.filtered.length /
-        PAGE_SIZE
-    )
-  );
+  return Math.max(1, Math.ceil(state.filtered.length / PAGE_SIZE));
 }
 
 function clampPage() {
-  state.page = Math.min(
-    Math.max(1, state.page),
-    pageCount()
-  );
+  state.page = Math.min(Math.max(1, state.page), pageCount());
 }
 
 function pageItems() {
-  const start =
-    (state.page - 1) *
-    PAGE_SIZE;
+  const start = (state.page - 1) * PAGE_SIZE;
 
-  return state.filtered.slice(
-    start,
-    start + PAGE_SIZE
-  );
+  return state.filtered.slice(start, start + PAGE_SIZE);
 }
 
 function goToPage(page) {
@@ -557,73 +531,35 @@ function goToPage(page) {
 }
 
 function revealFactPage(id) {
-  const index =
-    state.filtered.findIndex(
-      (fact) =>
-        fact._id === id
-    );
+  const index = state.filtered.findIndex((fact) => fact._id === id);
 
   if (index >= 0) {
-    state.page =
-      Math.floor(
-        index / PAGE_SIZE
-      ) + 1;
+    state.page = Math.floor(index / PAGE_SIZE) + 1;
   }
 }
 
-function applyFilters({
-  resetPage = false,
-} = {}) {
-  const query =
-    state.query
-      .trim()
-      .toLowerCase();
+function applyFilters({ resetPage = false } = {}) {
+  const query = state.query.trim().toLowerCase();
 
-  state.filtered =
-    state.facts.filter(
-      (fact) => {
-        const typeOk =
-          state.type === "all" ||
-          fact.type ===
-            state.type;
+  state.filtered = state.facts.filter((fact) => {
+    const typeOk = state.type === "all" || fact.type === state.type;
 
-        if (!typeOk) {
-          return false;
-        }
+    if (!typeOk) {
+      return false;
+    }
 
-        if (!query) {
-          return true;
-        }
+    if (!query) {
+      return true;
+    }
 
-        return (
-          String(
-            fact.text || ""
-          )
-            .toLowerCase()
-            .includes(query) ||
-
-          String(
-            fact._id || ""
-          )
-            .toLowerCase()
-            .includes(query) ||
-
-          catName(fact)
-            .toLowerCase()
-            .includes(query) ||
-
-          catTrait(fact)
-            .toLowerCase()
-            .includes(query) ||
-
-          String(
-            fact.type || ""
-          )
-            .toLowerCase()
-            .includes(query)
-        );
-      }
+    return (
+      String(fact.text || "").toLowerCase().includes(query) ||
+      String(fact._id || "").toLowerCase().includes(query) ||
+      catName(fact).toLowerCase().includes(query) ||
+      catTrait(fact).toLowerCase().includes(query) ||
+      String(fact.type || "").toLowerCase().includes(query)
     );
+  });
 
   if (resetPage) {
     state.page = 1;
@@ -634,153 +570,110 @@ function applyFilters({
   renderCatalog();
 }
 
+/* =========================================================
+   RENDER
+========================================================= */
+
 function renderCatalog() {
-  const pages =
-    pageCount();
+  const pages = pageCount();
 
-  const visible =
-    pageItems();
+  const visible = pageItems();
 
-  const start =
-    (state.page - 1) *
-    PAGE_SIZE;
+  const start = (state.page - 1) * PAGE_SIZE;
 
-  els.meta.textContent =
-    state.filtered.length
-      ? `${state.filtered.length} cats registered · page ${state.page} of ${pages}`
-      : "0 cats found";
+  els.meta.textContent = state.filtered.length
+    ? `${state.filtered.length} cats registered · page ${state.page} of ${pages}`
+    : "0 cats found";
 
-  els.empty.hidden =
-    state.filtered.length > 0;
+  els.empty.hidden = state.filtered.length > 0;
 
   if (els.pager) {
-    els.pager.hidden =
-      state.filtered.length <=
-      PAGE_SIZE;
+    els.pager.hidden = state.filtered.length <= PAGE_SIZE;
 
-    els.pageLabel.textContent =
-      `${state.page} / ${pages}`;
+    els.pageLabel.textContent = `${state.page} / ${pages}`;
 
-    els.pagePrev.disabled =
-      state.page <= 1;
+    els.pagePrev.disabled = state.page <= 1;
 
-    els.pageNext.disabled =
-      state.page >= pages;
+    els.pageNext.disabled = state.page >= pages;
   }
 
-  const ids =
-    `${state.page}:${visible
-      .map((fact) => fact._id)
-      .join(",")}`;
+  const ids = `${state.page}:${visible
+    .map((fact) => fact._id)
+    .join(",")}`;
 
-  if (
-    ids !== state.gridIds
-  ) {
+  if (ids !== state.gridIds) {
     state.gridIds = ids;
 
-    els.grid.innerHTML =
-      visible
-        .map(
-          (fact, index) => {
-            const name =
-              catName(fact);
+    els.grid.innerHTML = visible
+      .map((fact, index) => {
+        const name = catName(fact);
 
-            const trait =
-              catTrait(fact);
+        const trait = catTrait(fact);
 
-            return `
-              <button
-                class="entry-card"
-                type="button"
-                data-id="${fact._id}"
-                aria-label="Open record for ${name}"
-              >
-                <img
-                  src="${entryImage(fact)}"
-                  alt="Portrait of ${name}"
-                  width="58"
-                  height="58"
-                  loading="lazy"
-                  decoding="async"
-                />
+        return `
+          <button
+            class="entry-card"
+            type="button"
+            data-id="${fact._id}"
+            aria-label="Open record for ${name}"
+          >
+            <img
+              src="${entryImage(fact)}"
+              alt="Portrait of ${name}"
+              width="58"
+              height="58"
+              loading="lazy"
+              decoding="async"
+            />
 
-                <span class="num">
-                  #${entryNumber(
-                    fact,
-                    start + index
-                  )}
-                </span>
+            <span class="num">
+              #${entryNumber(fact, start + index)}
+            </span>
 
-                <strong class="cat-name">
-                  ${name}
-                </strong>
+            <strong class="cat-name">
+              ${name}
+            </strong>
 
-                <span class="type-dot cat">
-                  ${trait}
-                </span>
-              </button>
-            `;
-          }
-        )
-        .join("");
+            <span class="type-dot cat">
+              ${trait}
+            </span>
+          </button>
+        `;
+      })
+      .join("");
   }
 
-  els.grid
-    .querySelectorAll(
-      ".entry-card"
-    )
-    .forEach((card) => {
-      card.classList.toggle(
-        "is-selected",
-        card.dataset.id ===
-          state.selectedId
-      );
-    });
+  els.grid.querySelectorAll(".entry-card").forEach((card) => {
+    card.classList.toggle(
+      "is-selected",
+      card.dataset.id === state.selectedId
+    );
+  });
 }
 
-function renderDetail(
-  fact,
-  index
-) {
+function renderDetail(fact, index) {
   if (!fact) {
     return;
   }
 
-  const name =
-    catName(fact);
+  const name = catName(fact);
 
-  const trait =
-    catTrait(fact);
+  const trait = catTrait(fact);
 
-  const stats =
-    statBlock(fact);
+  const stats = statBlock(fact);
 
-  const created =
-    fact.createdAt
-      ? new Date(
-          fact.createdAt
-        ).toLocaleDateString(
-          "en-US"
-        )
-      : "Unknown";
+  const created = fact.createdAt
+    ? new Date(fact.createdAt).toLocaleDateString("en-US")
+    : "Unknown";
 
-  const userName =
-    fact.user?.name
-      ? `${fact.user.name.first || ""} ${
-          fact.user.name.last || ""
-        }`.trim()
-      : "Archive contributor";
+  const userName = fact.user?.name
+    ? `${fact.user.name.first || ""} ${fact.user.name.last || ""}`.trim()
+    : "Archive contributor";
 
-  const number =
-    entryNumber(
-      fact,
-      index
-    );
+  const number = entryNumber(fact, index);
 
   const status =
-    fact.status?.verified === true
-      ? "Verified"
-      : "Pending review";
+    fact.status?.verified === true ? "Verified" : "Pending review";
 
   els.detail.innerHTML = `
     <div class="wiki-body">
@@ -836,9 +729,7 @@ function renderDetail(
 
             <div>
               <dt>Source</dt>
-              <dd>${sourceLabel(
-                fact.source
-              )}</dd>
+              <dd>${sourceLabel(fact.source)}</dd>
             </div>
 
             <div>
@@ -921,83 +812,93 @@ function renderDetail(
   `;
 }
 
-function selectFact(id) {
-  const index =
-    state.filtered.findIndex(
-      (fact) =>
-        fact._id === id
-    );
+/* =========================================================
+   SELECCIÓN E HISTORIAL
+========================================================= */
+
+function selectFact(id, { record = true } = {}) {
+  const index = state.filtered.findIndex((fact) => fact._id === id);
 
   const fact =
     state.filtered[index] ||
-    state.facts.find(
-      (item) =>
-        item._id === id
-    );
+    state.facts.find((item) => item._id === id);
 
   if (!fact) {
     return;
   }
 
-  state.selectedId =
-    fact._id;
+  // Guarda el gato actual para poder volver a él con Back.
+  if (
+    record &&
+    state.selectedId &&
+    state.selectedId !== fact._id
+  ) {
+    state.history.push(state.selectedId);
 
-  state.view =
-    "detail";
+    if (state.history.length > HISTORY_LIMIT) {
+      state.history.shift();
+    }
+  }
 
-  els.device.dataset.view =
-    "detail";
+  state.selectedId = fact._id;
 
-  revealFactPage(
-    fact._id
-  );
+  state.view = "detail";
+
+  els.device.dataset.view = "detail";
+
+  revealFactPage(fact._id);
 
   renderCatalog();
 
-  renderDetail(
-    fact,
-    index >= 0
-      ? index
-      : 0
-  );
+  renderDetail(fact, index >= 0 ? index : 0);
 
-  if (
-    fact.user &&
-    typeof fact.user ===
-      "object"
-  ) {
+  if (fact.user && typeof fact.user === "object") {
     return;
   }
 
-  hydrateFact(
-    id,
-    index >= 0
-      ? index
-      : 0
-  );
+  hydrateFact(id, index >= 0 ? index : 0);
 }
 
-function hydrateFact(
-  id,
-  index
-) {
-  fetchJson(
-    `/facts/${encodeURIComponent(id)}`,
-    5000
-  )
+function goBack() {
+  // Saltar ids que ya no existan en el catálogo.
+  while (state.history.length) {
+    const previousId = state.history.pop();
+
+    if (state.facts.some((fact) => fact._id === previousId)) {
+      selectFact(previousId, { record: false });
+
+      return;
+    }
+  }
+
+  // Sin historial: volver a la pantalla de inicio.
+  showList();
+}
+
+function showList() {
+  state.view = "list";
+
+  state.selectedId = null;
+
+  state.history = [];
+
+  els.device.dataset.view = "list";
+
+  els.detail.innerHTML = welcomeHTML;
+
+  els.detail.scrollTop = 0;
+
+  renderCatalog();
+}
+
+function hydrateFact(id, index) {
+  fetchJson(`/facts/${encodeURIComponent(id)}`, 5000)
     .then((full) => {
-      if (
-        !full?._id ||
-        state.selectedId !== id
-      ) {
+      if (!full?._id || state.selectedId !== id) {
         return;
       }
 
-      const slot =
-        state.facts.findIndex(
-          (item) =>
-            item._id === id
-        );
+      const slot = state.facts.findIndex((item) => item._id === id);
 
       if (slot >= 0) {
         state.facts[slot] = {
@@ -1006,51 +907,31 @@ function hydrateFact(
         };
       }
 
-      renderDetail(
-        {
-          ...state.facts[slot],
-        },
-        index
-      );
+      renderDetail({ ...state.facts[slot] }, index);
     })
     .catch(() => {});
 }
 
-async function searchRemote(
-  query
-) {
-  if (
-    !/^[a-f\d]{24}$/i.test(
-      query
-    )
-  ) {
+async function searchRemote(query) {
+  if (!/^[a-f\d]{24}$/i.test(query)) {
     return;
   }
 
-  const existing =
-    state.facts.some(
-      (fact) =>
-        fact._id.toLowerCase() ===
-        query.toLowerCase()
-    );
+  const existing = state.facts.some(
+    (fact) => fact._id.toLowerCase() === query.toLowerCase()
+  );
 
   if (existing) {
     return;
   }
 
   try {
-    const result =
-      await fetchJson(
-        `/facts/${encodeURIComponent(
-          query
-        )}`,
-        10000
-      );
+    const result = await fetchJson(
+      `/facts/${encodeURIComponent(query)}`,
+      10000
+    );
 
-    const fact =
-      Array.isArray(result)
-        ? result[0]
-        : result;
+    const fact = Array.isArray(result) ? result[0] : result;
 
     if (!fact?._id) {
       return;
@@ -1058,53 +939,32 @@ async function searchRemote(
 
     mergeFacts([fact]);
 
-    applyFilters({
-      resetPage: true,
-    });
+    applyFilters({ resetPage: true });
 
-    selectFact(
-      fact._id
-    );
+    selectFact(fact._id);
   } catch {
     // No matching remote record.
   }
 }
 
-function showList() {
-  state.view =
-    "list";
-
-  els.device.dataset.view =
-    "list";
-}
-
-function moveSelection(
-  direction
-) {
+function moveSelection(direction) {
   if (!state.filtered.length) {
     return;
   }
 
   let columns = 4;
 
-  if (
-    window.innerWidth <= 900
-  ) {
+  if (window.innerWidth <= 900) {
     columns = 3;
   }
 
-  if (
-    window.innerWidth <= 520
-  ) {
+  if (window.innerWidth <= 520) {
     columns = 2;
   }
 
-  let index =
-    state.filtered.findIndex(
-      (fact) =>
-        fact._id ===
-        state.selectedId
-    );
+  let index = state.filtered.findIndex(
+    (fact) => fact._id === state.selectedId
+  );
 
   if (index < 0) {
     index = 0;
@@ -1126,55 +986,31 @@ function moveSelection(
     index += columns;
   }
 
-  index = Math.max(
-    0,
-    Math.min(
-      state.filtered.length - 1,
-      index
-    )
-  );
+  index = Math.max(0, Math.min(state.filtered.length - 1, index));
 
-  selectFact(
-    state.filtered[index]._id
-  );
+  selectFact(state.filtered[index]._id);
 }
 
 async function loadRandom() {
-  const pool =
-    state.filtered.length
-      ? state.filtered
-      : state.facts;
+  const pool = state.filtered.length ? state.filtered : state.facts;
 
   if (pool.length) {
-    const fact =
-      pool[
-        Math.floor(
-          Math.random() *
-            pool.length
-        )
-      ];
+    const fact = pool[Math.floor(Math.random() * pool.length)];
 
-    selectFact(
-      fact._id
-    );
+    selectFact(fact._id);
 
     return;
   }
 
   try {
-    els.meta.textContent =
-      "Finding a random cat…";
+    els.meta.textContent = "Finding a random cat…";
 
-    const result =
-      await fetchJson(
-        "/facts/random?animal_type=cat",
-        60000
-      );
+    const result = await fetchJson(
+      "/facts/random?animal_type=cat",
+      60000
+    );
 
-    const fact =
-      Array.isArray(result)
-        ? result[0]
-        : result;
+    const fact = Array.isArray(result) ? result[0] : result;
 
     if (!fact?._id) {
       return;
@@ -1184,9 +1020,7 @@ async function loadRandom() {
 
     applyFilters();
 
-    selectFact(
-      fact._id
-    );
+    selectFact(fact._id);
   } catch (error) {
     els.detail.innerHTML = `
       <div class="error-box">
@@ -1196,208 +1030,130 @@ async function loadRandom() {
   }
 }
 
-els.grid.addEventListener(
-  "click",
-  (event) => {
-    const card =
-      event.target.closest(
-        "[data-id]"
-      );
+/* =========================================================
+   EVENTOS
+========================================================= */
 
-    if (card) {
-      selectFact(
-        card.dataset.id
-      );
-    }
+els.grid.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-id]");
+
+  if (card) {
+    selectFact(card.dataset.id);
   }
-);
+});
 
-els.searchForm.addEventListener(
-  "submit",
-  (event) => {
+els.searchForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  state.query = els.searchInput.value;
+
+  applyFilters({ resetPage: true });
+
+  searchRemote(state.query.trim());
+});
+
+els.searchInput.addEventListener("input", () => {
+  state.query = els.searchInput.value;
+
+  applyFilters({ resetPage: true });
+});
+
+els.pagePrev.addEventListener("click", () => {
+  goToPage(state.page - 1);
+});
+
+els.pageNext.addEventListener("click", () => {
+  goToPage(state.page + 1);
+});
+
+document.querySelectorAll(".dpad-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    if (button.dataset.dir === "select") {
+      if (state.selectedId) {
+        selectFact(state.selectedId);
+      }
+
+      return;
+    }
+
+    moveSelection(button.dataset.dir);
+  });
+});
+
+document.getElementById("btn-random").addEventListener("click", loadRandom);
+
+document.getElementById("dock-random").addEventListener("click", loadRandom);
+
+// Botón B: vuelve al gato anterior.
+document.getElementById("btn-back").addEventListener("click", goBack);
+
+// Flecha ← de móvil: vuelve al catálogo.
+els.backBtn.addEventListener("click", showList);
+
+document.querySelectorAll("[data-dock]").forEach((button) => {
+  button.addEventListener("click", () => {
+    if (button.dataset.dock === "catalog") {
+      showList();
+    }
+
+    if (button.dataset.dock === "about") {
+      state.view = "about";
+
+      els.device.dataset.view = "about";
+
+      els.detail.innerHTML = `
+        <div class="welcome about-page">
+
+          <p class="welcome-kicker">
+            About this dex
+          </p>
+
+          <h2>
+            Catdex 02
+          </h2>
+
+          <p>
+            An interactive feline encyclopedia
+            built using a public API containing
+            facts about cats.
+          </p>
+
+          <p>
+            Each record receives a visual identity
+            inside Catdex, including a name, trait,
+            code and feline profile.
+          </p>
+
+          <p>
+            The factual information comes directly
+            from the Cat Facts API.
+          </p>
+
+        </div>
+      `;
+    }
+  });
+});
+
+window.addEventListener("keydown", (event) => {
+  const keys = {
+    ArrowLeft: "left",
+    ArrowRight: "right",
+    ArrowUp: "up",
+    ArrowDown: "down",
+  };
+
+  if (keys[event.key]) {
+    // No robar las flechas mientras se escribe en el buscador.
+    if (event.target === els.searchInput) {
+      return;
+    }
+
     event.preventDefault();
 
-    state.query =
-      els.searchInput.value;
-
-    applyFilters({
-      resetPage: true,
-    });
-
-    searchRemote(
-      state.query.trim()
-    );
+    moveSelection(keys[event.key]);
   }
-);
+});
 
-els.searchInput.addEventListener(
-  "input",
-  () => {
-    state.query =
-      els.searchInput.value;
-
-    applyFilters({
-      resetPage: true,
-    });
-  }
-);
-
-els.pagePrev.addEventListener(
-  "click",
-  () => {
-    goToPage(
-      state.page - 1
-    );
-  }
-);
-
-els.pageNext.addEventListener(
-  "click",
-  () => {
-    goToPage(
-      state.page + 1
-    );
-  }
-);
-
-document
-  .querySelectorAll(".dpad-btn")
-  .forEach((button) => {
-    button.addEventListener(
-      "click",
-      () => {
-        if (
-          button.dataset.dir ===
-          "select"
-        ) {
-          if (
-            state.selectedId
-          ) {
-            selectFact(
-              state.selectedId
-            );
-          }
-
-          return;
-        }
-
-        moveSelection(
-          button.dataset.dir
-        );
-      }
-    );
-  });
-
-document
-  .getElementById(
-    "btn-random"
-  )
-  .addEventListener(
-    "click",
-    loadRandom
-  );
-
-document
-  .getElementById(
-    "dock-random"
-  )
-  .addEventListener(
-    "click",
-    loadRandom
-  );
-
-document
-  .getElementById(
-    "btn-back"
-  )
-  .addEventListener(
-    "click",
-    showList
-  );
-
-els.backBtn.addEventListener(
-  "click",
-  showList
-);
-
-document
-  .querySelectorAll(
-    "[data-dock]"
-  )
-  .forEach((button) => {
-    button.addEventListener(
-      "click",
-      () => {
-        if (
-          button.dataset.dock ===
-          "catalog"
-        ) {
-          showList();
-        }
-
-        if (
-          button.dataset.dock ===
-          "about"
-        ) {
-          state.view =
-            "about";
-
-          els.device.dataset.view =
-            "about";
-
-          els.detail.innerHTML = `
-            <div class="welcome about-page">
-
-              <p class="welcome-kicker">
-                About this dex
-              </p>
-
-              <h2>
-                Catdex 02
-              </h2>
-
-              <p>
-                An interactive feline encyclopedia
-                built using a public API containing
-                facts about cats.
-              </p>
-
-              <p>
-                Each record receives a visual identity
-                inside Catdex, including a name, trait,
-                code and feline profile.
-              </p>
-
-              <p>
-                The factual information comes directly
-                from the Cat Facts API.
-              </p>
-
-            </div>
-          `;
-        }
-      }
-    );
-  });
-
-window.addEventListener(
-  "keydown",
-  (event) => {
-    const keys = {
-      ArrowLeft: "left",
-      ArrowRight: "right",
-      ArrowUp: "up",
-      ArrowDown: "down",
-    };
-
-    if (keys[event.key]) {
-      event.preventDefault();
-
-      moveSelection(
-        keys[event.key]
-      );
-    }
-  }
-);
-
+loadNameRegistry();
 loadCatalog();
