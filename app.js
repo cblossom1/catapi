@@ -1,4 +1,5 @@
 const API = "https://catfacts.wohlbruck.dev";
+
 const CACHE_KEY = "catdex-cache-v4";
 const BATCH_SIZE = 500;
 const MAX_BATCHES = 8;
@@ -18,10 +19,6 @@ const state = {
 const memory = new Map();
 const inflight = new Map();
 
-/* =========================================================
-   ELEMENTOS DEL DOM
-========================================================= */
-
 const els = {
   device: document.getElementById("device"),
   grid: document.getElementById("catalog-grid"),
@@ -36,11 +33,6 @@ const els = {
   pagePrev: document.getElementById("page-prev"),
   pageNext: document.getElementById("page-next"),
 };
-
-/* =========================================================
-   NOMBRES DE LOS GATOS
-   Cada ID siempre tendrá el mismo nombre.
-========================================================= */
 
 const CAT_NAMES = [
   "Milo",
@@ -71,20 +63,20 @@ const CAT_NAMES = [
   "Felix",
   "Nube",
   "Gala",
-  "Tigre",
-  "Lía",
+  "Gudy",
+  "Lia",
   "Cosmo",
   "Mango",
   "Neko",
-  "Sombra",
-  "Simón",
+  "Shadow",
+  "Simon",
   "Dante",
   "Frida",
   "Mora",
   "Pixel",
   "Olivia",
   "Max",
-  "Canela",
+  "Cinnamon",
   "Tao",
   "Zoe",
   "Ringo",
@@ -96,21 +88,17 @@ const CAT_NAMES = [
 ];
 
 const CAT_TRAITS = [
-  "Observador",
-  "Explorador",
-  "Curioso",
-  "Tranquilo",
-  "Juguetón",
-  "Independiente",
+  "Observant",
+  "Explorer",
+  "Curious",
+  "Calm",
+  "Playful",
+  "Independent",
   "Sociable",
-  "Dormilón",
-  "Cazador nato",
-  "Amante del agua",
+  "Sleepy",
+  "Natural Hunter",
+  "Water Lover",
 ];
-
-/* =========================================================
-   UTILIDADES
-========================================================= */
 
 function hashNumber(value) {
   let hash = 0;
@@ -124,116 +112,108 @@ function hashNumber(value) {
 }
 
 function keepFact(fact) {
-  if (!fact?._id || fact.deleted) return false;
+  if (!fact?._id || fact.deleted) {
+    return false;
+  }
+
   return !fact.type || fact.type === "cat";
-}
-
-function typeLabel(type) {
-  const labels = {
-    cat: "gato",
-    dog: "perro",
-    horse: "caballo",
-  };
-
-  return labels[type] || "gato";
 }
 
 function sourceLabel(source) {
   const labels = {
-    user: "usuario",
+    user: "User",
     api: "API",
-    archive: "archivo",
+    archive: "Archive",
   };
 
-  return labels[source] || source || "archivo";
+  return labels[source] || source || "Archive";
 }
 
 function entryNumber(fact, index) {
-  const n = (index ?? hashNumber(fact._id) % 900) + 1;
+  const n =
+    (index ?? hashNumber(fact._id) % 900) + 1;
+
   return String(n).padStart(3, "0");
 }
 
-/* =========================================================
-   IDENTIDAD DEL GATO
-========================================================= */
-
 function catName(fact) {
-  const index = hashNumber(fact._id) % CAT_NAMES.length;
+  const index =
+    hashNumber(fact._id) % CAT_NAMES.length;
+
   return CAT_NAMES[index];
 }
 
 function catTrait(fact) {
-  const text = String(fact.text || "").toLowerCase();
+  const text = String(
+    fact.text || ""
+  ).toLowerCase();
 
   if (
-    /sleep|sleeping|sleepy|nap|dormir|sueño|sleeping/.test(text)
+    /sleep|sleeping|sleepy|nap/.test(text)
   ) {
-    return "Dormilón";
+    return "Sleepy";
   }
 
   if (
-    /hunt|hunting|hunter|predator|prey|cazar|cazador|presa/.test(text)
+    /hunt|hunting|hunter|predator|prey/.test(text)
   ) {
-    return "Cazador nato";
+    return "Natural Hunter";
   }
 
   if (
-    /water|drink|drinking|swim|agua|beber/.test(text)
+    /water|drink|drinking|swim/.test(text)
   ) {
-    return "Amante del agua";
+    return "Water Lover";
   }
 
   if (
-    /food|eat|eating|diet|meal|comer|comida|aliment/.test(text)
+    /food|eat|eating|diet|meal/.test(text)
   ) {
-    return "Gran apetito";
+    return "Big Appetite";
   }
 
   if (
-    /eye|eyes|vision|sight|ojo|ojos|visión/.test(text)
+    /eye|eyes|vision|sight/.test(text)
   ) {
-    return "Mirada curiosa";
+    return "Curious Gaze";
   }
 
   if (
-    /sound|hear|hearing|ear|oído|oreja|sonido/.test(text)
+    /sound|hear|hearing|ear/.test(text)
   ) {
-    return "Oído sensible";
+    return "Sensitive Hearing";
   }
 
   if (
-    /smell|scent|olfactory|nose|olor|olfato|nariz/.test(text)
+    /smell|scent|olfactory|nose/.test(text)
   ) {
-    return "Olfato agudo";
+    return "Sharp Sense of Smell";
   }
 
   if (
-    /hair|fur|coat|whisker|pelo|pelaje|bigote/.test(text)
+    /hair|fur|coat|whisker/.test(text)
   ) {
-    return "Pelaje distintivo";
+    return "Distinctive Coat";
   }
 
   if (
-    /kitten|young|baby|play|playing|gatito|jugar|juguet/.test(text)
+    /kitten|young|baby|play|playing/.test(text)
   ) {
-    return "Espíritu juguetón";
+    return "Playful Spirit";
   }
 
   if (
-    /human|people|owner|person|social|humanos|persona|dueño/.test(text)
+    /human|people|owner|person|social/.test(text)
   ) {
     return "Sociable";
   }
 
   const index =
-    (hashNumber(fact._id) >> 4) % CAT_TRAITS.length;
+    (hashNumber(fact._id) >> 4) %
+    CAT_TRAITS.length;
 
   return CAT_TRAITS[index];
 }
-
-/* =========================================================
-   IMAGEN
-========================================================= */
 
 function entryImage(fact) {
   return `https://robohash.org/${encodeURIComponent(
@@ -241,46 +221,47 @@ function entryImage(fact) {
   )}.png?set=set4&size=320x320`;
 }
 
-/* =========================================================
-   ESTADÍSTICAS DEL GATO
-========================================================= */
-
 function statBlock(fact) {
   const base = hashNumber(fact._id);
 
-  const curiosity = 40 + (base % 61);
-  const sociability = 35 + ((base >> 3) % 66);
-  const instinct = 45 + ((base >> 6) % 56);
-  const adaptability = 40 + ((base >> 9) % 61);
-  const energy = 30 + ((base >> 12) % 71);
+  const curiosity =
+    40 + (base % 61);
+
+  const sociability =
+    35 + ((base >> 3) % 66);
+
+  const instinct =
+    45 + ((base >> 6) % 56);
+
+  const adaptability =
+    40 + ((base >> 9) % 61);
+
+  const energy =
+    30 + ((base >> 12) % 71);
 
   return [
     {
-      label: "Curiosidad",
+      label: "Curiosity",
       value: curiosity,
     },
     {
-      label: "Sociabilidad",
+      label: "Sociability",
       value: sociability,
     },
     {
-      label: "Instinto",
+      label: "Instinct",
       value: instinct,
     },
     {
-      label: "Adaptabilidad",
+      label: "Adaptability",
       value: adaptability,
     },
     {
-      label: "Energía",
+      label: "Energy",
       value: energy,
     },
   ];
 }
-
-/* =========================================================
-   CACHE
-========================================================= */
 
 function readDiskCache() {
   try {
@@ -288,7 +269,9 @@ function readDiskCache() {
       localStorage.getItem(CACHE_KEY) || "null"
     );
 
-    if (!parsed?.facts?.length) return null;
+    if (!parsed?.facts?.length) {
+      return null;
+    }
 
     return parsed;
   } catch {
@@ -306,13 +289,9 @@ function writeDiskCache(facts) {
       })
     );
   } catch {
-    /* Si el navegador no permite guardar, seguimos normalmente */
+    // Continue normally if storage is unavailable.
   }
 }
-
-/* =========================================================
-   API
-========================================================= */
 
 async function fetchJson(
   path,
@@ -328,7 +307,8 @@ async function fetchJson(
   }
 
   const request = (async () => {
-    const controller = new AbortController();
+    const controller =
+      new AbortController();
 
     const timer = setTimeout(
       () => controller.abort(),
@@ -336,17 +316,21 @@ async function fetchJson(
     );
 
     try {
-      const response = await fetch(`${API}${path}`, {
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        `${API}${path}`,
+        {
+          signal: controller.signal,
+        }
+      );
 
       if (!response.ok) {
         throw new Error(
-          `El archivo respondió ${response.status}`
+          `The archive responded with ${response.status}`
         );
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (cache) {
         memory.set(path, data);
@@ -366,20 +350,21 @@ async function fetchJson(
   return request;
 }
 
-/* =========================================================
-   ORGANIZAR LOS HECHOS
-========================================================= */
-
 function mergeFacts(incoming) {
   const unique = new Map(
-    state.facts.map((fact) => [fact._id, fact])
+    state.facts.map((fact) => [
+      fact._id,
+      fact,
+    ])
   );
 
   incoming
     .flat()
     .filter(keepFact)
     .forEach((fact) => {
-      if (!fact?._id) return;
+      if (!fact?._id) {
+        return;
+      }
 
       unique.set(fact._id, {
         ...unique.get(fact._id),
@@ -387,20 +372,22 @@ function mergeFacts(incoming) {
       });
     });
 
-  state.facts = [...unique.values()].sort((a, b) => {
+  state.facts = [
+    ...unique.values(),
+  ].sort((a, b) => {
     const av =
-      a.status?.verified === true ? 0 : 1;
+      a.status?.verified === true
+        ? 0
+        : 1;
 
     const bv =
-      b.status?.verified === true ? 0 : 1;
+      b.status?.verified === true
+        ? 0
+        : 1;
 
     return av - bv;
   });
 }
-
-/* =========================================================
-   CARGA
-========================================================= */
 
 function showSkeletons() {
   els.grid.innerHTML = Array.from(
@@ -412,7 +399,8 @@ function showSkeletons() {
 async function loadCatalog() {
   els.empty.hidden = true;
 
-  const cached = readDiskCache();
+  const cached =
+    readDiskCache();
 
   if (cached?.facts?.length) {
     mergeFacts(cached.facts);
@@ -420,10 +408,10 @@ async function loadCatalog() {
     applyFilters();
 
     els.meta.textContent =
-      `${state.filtered.length} registros · cargando archivo…`;
+      `${state.filtered.length} records · loading archive…`;
   } else {
     els.meta.textContent =
-      "Cargando archivo felino…";
+      "Loading feline archive…";
 
     showSkeletons();
   }
@@ -434,15 +422,19 @@ async function loadCatalog() {
 async function refreshCatalog() {
   try {
     try {
-      const verified = await fetchJson(
-        "/facts",
-        60000
+      const verified =
+        await fetchJson(
+          "/facts",
+          60000
+        );
+
+      mergeFacts(
+        [].concat(verified)
       );
 
-      mergeFacts([].concat(verified));
       applyFilters();
     } catch {
-      /* Continuamos con la carga principal */
+      // Continue with the main archive.
     }
 
     let previous = -1;
@@ -454,29 +446,37 @@ async function refreshCatalog() {
       round += 1
     ) {
       els.meta.textContent =
-        `Explorando archivo felino… ${state.facts.length} registros ` +
-        `(lote ${round}/${MAX_BATCHES})`;
+        `Exploring feline archive… ${state.facts.length} records ` +
+        `(batch ${round}/${MAX_BATCHES})`;
 
       try {
-        const batch = await fetchJson(
-          `/facts/random?animal_type=cat&amount=${BATCH_SIZE}&_=${round}`,
-          180000,
-          { cache: false }
-        );
+        const batch =
+          await fetchJson(
+            `/facts/random?animal_type=cat&amount=${BATCH_SIZE}&_=${round}`,
+            180000,
+            { cache: false }
+          );
 
-        mergeFacts([].concat(batch));
+        mergeFacts(
+          [].concat(batch)
+        );
 
         applyFilters();
 
-        writeDiskCache(state.facts);
+        writeDiskCache(
+          state.facts
+        );
       } catch {
         els.meta.textContent =
-          `${state.facts.length} registros · reintentando lote ${round}…`;
+          `${state.facts.length} records · retrying batch ${round}…`;
 
         continue;
       }
 
-      if (state.facts.length === previous) {
+      if (
+        state.facts.length ===
+        previous
+      ) {
         stalled += 1;
 
         if (stalled >= 2) {
@@ -486,27 +486,31 @@ async function refreshCatalog() {
         stalled = 0;
       }
 
-      previous = state.facts.length;
+      previous =
+        state.facts.length;
     }
 
     if (!state.facts.length) {
       throw new Error(
-        "El archivo volvió vacío"
+        "The archive returned no records."
       );
     }
 
     applyFilters();
-    writeDiskCache(state.facts);
+
+    writeDiskCache(
+      state.facts
+    );
   } catch (error) {
     if (state.facts.length) {
       els.meta.textContent =
-        `${state.filtered.length} registros · archivo local`;
+        `${state.filtered.length} records · local archive`;
 
       return;
     }
 
     els.meta.textContent =
-      "No se pudo alcanzar el archivo.";
+      "Could not reach the archive.";
 
     els.detail.innerHTML = `
       <div class="error-box">
@@ -516,15 +520,12 @@ async function refreshCatalog() {
   }
 }
 
-/* =========================================================
-   PAGINACIÓN
-========================================================= */
-
 function pageCount() {
   return Math.max(
     1,
     Math.ceil(
-      state.filtered.length / PAGE_SIZE
+      state.filtered.length /
+        PAGE_SIZE
     )
   );
 }
@@ -538,7 +539,8 @@ function clampPage() {
 
 function pageItems() {
   const start =
-    (state.page - 1) * PAGE_SIZE;
+    (state.page - 1) *
+    PAGE_SIZE;
 
   return state.filtered.slice(
     start,
@@ -557,56 +559,71 @@ function goToPage(page) {
 function revealFactPage(id) {
   const index =
     state.filtered.findIndex(
-      (fact) => fact._id === id
+      (fact) =>
+        fact._id === id
     );
 
   if (index >= 0) {
     state.page =
-      Math.floor(index / PAGE_SIZE) + 1;
+      Math.floor(
+        index / PAGE_SIZE
+      ) + 1;
   }
 }
 
-/* =========================================================
-   BÚSQUEDA
-========================================================= */
-
-function applyFilters({ resetPage = false } = {}) {
+function applyFilters({
+  resetPage = false,
+} = {}) {
   const query =
-    state.query.trim().toLowerCase();
+    state.query
+      .trim()
+      .toLowerCase();
 
-  state.filtered = state.facts.filter(
-    (fact) => {
-      const typeOk =
-        state.type === "all" ||
-        fact.type === state.type;
+  state.filtered =
+    state.facts.filter(
+      (fact) => {
+        const typeOk =
+          state.type === "all" ||
+          fact.type ===
+            state.type;
 
-      if (!typeOk) return false;
+        if (!typeOk) {
+          return false;
+        }
 
-      if (!query) return true;
+        if (!query) {
+          return true;
+        }
 
-      return (
-        String(fact.text || "")
-          .toLowerCase()
-          .includes(query) ||
+        return (
+          String(
+            fact.text || ""
+          )
+            .toLowerCase()
+            .includes(query) ||
 
-        String(fact._id || "")
-          .toLowerCase()
-          .includes(query) ||
+          String(
+            fact._id || ""
+          )
+            .toLowerCase()
+            .includes(query) ||
 
-        catName(fact)
-          .toLowerCase()
-          .includes(query) ||
+          catName(fact)
+            .toLowerCase()
+            .includes(query) ||
 
-        catTrait(fact)
-          .toLowerCase()
-          .includes(query) ||
+          catTrait(fact)
+            .toLowerCase()
+            .includes(query) ||
 
-        String(fact.type || "")
-          .toLowerCase()
-          .includes(query)
-      );
-    }
-  );
+          String(
+            fact.type || ""
+          )
+            .toLowerCase()
+            .includes(query)
+        );
+      }
+    );
 
   if (resetPage) {
     state.page = 1;
@@ -617,29 +634,29 @@ function applyFilters({ resetPage = false } = {}) {
   renderCatalog();
 }
 
-/* =========================================================
-   CATÁLOGO
-========================================================= */
-
 function renderCatalog() {
-  const pages = pageCount();
+  const pages =
+    pageCount();
 
-  const visible = pageItems();
+  const visible =
+    pageItems();
 
   const start =
-    (state.page - 1) * PAGE_SIZE;
+    (state.page - 1) *
+    PAGE_SIZE;
 
   els.meta.textContent =
     state.filtered.length
-      ? `${state.filtered.length} gatos registrados · página ${state.page} de ${pages}`
-      : "0 gatos encontrados";
+      ? `${state.filtered.length} cats registered · page ${state.page} of ${pages}`
+      : "0 cats found";
 
   els.empty.hidden =
     state.filtered.length > 0;
 
   if (els.pager) {
     els.pager.hidden =
-      state.filtered.length <= PAGE_SIZE;
+      state.filtered.length <=
+      PAGE_SIZE;
 
     els.pageLabel.textContent =
       `${state.page} / ${pages}`;
@@ -656,56 +673,62 @@ function renderCatalog() {
       .map((fact) => fact._id)
       .join(",")}`;
 
-  if (ids !== state.gridIds) {
+  if (
+    ids !== state.gridIds
+  ) {
     state.gridIds = ids;
 
     els.grid.innerHTML =
       visible
-        .map((fact, index) => {
-          const name =
-            catName(fact);
+        .map(
+          (fact, index) => {
+            const name =
+              catName(fact);
 
-          const trait =
-            catTrait(fact);
+            const trait =
+              catTrait(fact);
 
-          return `
-            <button
-              class="entry-card"
-              type="button"
-              data-id="${fact._id}"
-              aria-label="Abrir ficha de ${name}"
-            >
-              <img
-                src="${entryImage(fact)}"
-                alt="Retrato de ${name}"
-                width="58"
-                height="58"
-                loading="lazy"
-                decoding="async"
-              />
+            return `
+              <button
+                class="entry-card"
+                type="button"
+                data-id="${fact._id}"
+                aria-label="Open record for ${name}"
+              >
+                <img
+                  src="${entryImage(fact)}"
+                  alt="Portrait of ${name}"
+                  width="58"
+                  height="58"
+                  loading="lazy"
+                  decoding="async"
+                />
 
-              <span class="num">
-                #${entryNumber(
-                  fact,
-                  start + index
-                )}
-              </span>
+                <span class="num">
+                  #${entryNumber(
+                    fact,
+                    start + index
+                  )}
+                </span>
 
-              <strong class="cat-name">
-                ${name}
-              </strong>
+                <strong class="cat-name">
+                  ${name}
+                </strong>
 
-              <span class="type-dot cat">
-                ${trait}
-              </span>
-            </button>
-          `;
-        })
+                <span class="type-dot cat">
+                  ${trait}
+                </span>
+              </button>
+            `;
+          }
+        )
         .join("");
   }
 
   els.grid
-    .querySelectorAll(".entry-card")
+    .querySelectorAll(
+      ".entry-card"
+    )
     .forEach((card) => {
       card.classList.toggle(
         "is-selected",
@@ -715,12 +738,13 @@ function renderCatalog() {
     });
 }
 
-/* =========================================================
-   FICHA DEL GATO
-========================================================= */
-
-function renderDetail(fact, index) {
-  if (!fact) return;
+function renderDetail(
+  fact,
+  index
+) {
+  if (!fact) {
+    return;
+  }
 
   const name =
     catName(fact);
@@ -735,91 +759,119 @@ function renderDetail(fact, index) {
     fact.createdAt
       ? new Date(
           fact.createdAt
-        ).toLocaleDateString("es")
-      : "Desconocido";
+        ).toLocaleDateString(
+          "en-US"
+        )
+      : "Unknown";
 
   const userName =
     fact.user?.name
       ? `${fact.user.name.first || ""} ${
           fact.user.name.last || ""
         }`.trim()
-      : "Colaborador del archivo";
+      : "Archive contributor";
 
   const number =
-    entryNumber(fact, index);
+    entryNumber(
+      fact,
+      index
+    );
+
+  const status =
+    fact.status?.verified === true
+      ? "Verified"
+      : "Pending review";
 
   els.detail.innerHTML = `
     <div class="wiki-body">
 
-      <p class="wiki-kicker">
-        Registro felino #${number} · CATDEX 02
-      </p>
+      <div class="record-header">
+        <p class="wiki-kicker">
+          FELINE RECORD #${number} · CATDEX 02
+        </p>
 
-      <aside class="infobox">
+        <h2>${name}</h2>
 
-        <img
-          src="${entryImage(fact)}"
-          alt="Retrato de ${name}"
-          width="230"
-          height="230"
-        />
+        <p class="record-trait">
+          ${trait}
+        </p>
+      </div>
 
-        <dl>
+      <div class="record-layout">
 
-          <div>
-            <dt>Nombre</dt>
-            <dd>${name}</dd>
-          </div>
+        <aside class="infobox">
 
-          <div>
-            <dt>Código</dt>
-            <dd>#${number}</dd>
-          </div>
+          <img
+            src="${entryImage(fact)}"
+            alt="Portrait of ${name}"
+            width="230"
+            height="230"
+          />
 
-          <div>
-            <dt>Tipo</dt>
-            <dd>
-              <span class="type-badge cat">
-                Gato
-              </span>
-            </dd>
-          </div>
+          <dl>
 
-          <div>
-            <dt>Rasgo</dt>
-            <dd>${trait}</dd>
-          </div>
+            <div>
+              <dt>Name</dt>
+              <dd>${name}</dd>
+            </div>
 
-          <div>
-            <dt>Fuente</dt>
-            <dd>${sourceLabel(
-              fact.source
-            )}</dd>
-          </div>
+            <div>
+              <dt>Code</dt>
+              <dd>#${number}</dd>
+            </div>
 
-          <div>
-            <dt>Registrado</dt>
-            <dd>${created}</dd>
-          </div>
+            <div>
+              <dt>Type</dt>
+              <dd>
+                <span class="type-badge cat">
+                  Cat
+                </span>
+              </dd>
+            </div>
 
-        </dl>
+            <div>
+              <dt>Trait</dt>
+              <dd>${trait}</dd>
+            </div>
 
-      </aside>
+            <div>
+              <dt>Source</dt>
+              <dd>${sourceLabel(
+                fact.source
+              )}</dd>
+            </div>
 
-      <h2>${name}</h2>
+            <div>
+              <dt>Registered</dt>
+              <dd>${created}</dd>
+            </div>
 
-      <p class="wiki-kicker">
-        ${trait}
-      </p>
+          </dl>
 
-      <p class="wiki-text">
-        ${fact.text}
-      </p>
+        </aside>
+
+        <section class="description-section">
+
+          <h3 class="section-title">
+            DESCRIPTION
+          </h3>
+
+          <p class="wiki-text">
+            ${fact.text}
+          </p>
+
+          <p class="description-note">
+            Original fact provided by the Cat Facts API.
+          </p>
+
+        </section>
+
+      </div>
 
       <section class="stats">
 
         <h3>
-          PERFIL FELINO
+          FELINE PROFILE
         </h3>
 
         ${stats
@@ -850,23 +902,18 @@ function renderDetail(fact, index) {
 
       <p class="wiki-note">
 
-        Registro asociado a
+        Record associated with
         <strong>${name}</strong>.
 
-        Este perfil visual es una
-        representación de Catdex; el
-        hecho mostrado proviene de la
-        API pública Cat Facts.
+        The visual profile is part of
+        Catdex. The fact shown above comes
+        directly from the public Cat Facts API.
 
-        Registrado por
+        Registered by
         ${userName}.
 
-        Estado:
-        ${
-          fact.status?.verified === true
-            ? "verificado"
-            : "pendiente de revisión"
-        }.
+        Status:
+        ${status}.
 
       </p>
 
@@ -874,23 +921,23 @@ function renderDetail(fact, index) {
   `;
 }
 
-/* =========================================================
-   SELECCIONAR GATO
-========================================================= */
-
 function selectFact(id) {
   const index =
     state.filtered.findIndex(
-      (fact) => fact._id === id
+      (fact) =>
+        fact._id === id
     );
 
   const fact =
     state.filtered[index] ||
     state.facts.find(
-      (item) => item._id === id
+      (item) =>
+        item._id === id
     );
 
-  if (!fact) return;
+  if (!fact) {
+    return;
+  }
 
   state.selectedId =
     fact._id;
@@ -909,25 +956,33 @@ function selectFact(id) {
 
   renderDetail(
     fact,
-    index >= 0 ? index : 0
+    index >= 0
+      ? index
+      : 0
   );
 
   if (
     fact.user &&
-    typeof fact.user === "object"
+    typeof fact.user ===
+      "object"
   ) {
     return;
   }
 
   hydrateFact(
     id,
-    index >= 0 ? index : 0
+    index >= 0
+      ? index
+      : 0
   );
 }
 
-function hydrateFact(id, index) {
+function hydrateFact(
+  id,
+  index
+) {
   fetchJson(
-    `/facts/${id}`,
+    `/facts/${encodeURIComponent(id)}`,
     5000
   )
     .then((full) => {
@@ -961,9 +1016,59 @@ function hydrateFact(id, index) {
     .catch(() => {});
 }
 
-/* =========================================================
-   NAVEGACIÓN
-========================================================= */
+async function searchRemote(
+  query
+) {
+  if (
+    !/^[a-f\d]{24}$/i.test(
+      query
+    )
+  ) {
+    return;
+  }
+
+  const existing =
+    state.facts.some(
+      (fact) =>
+        fact._id.toLowerCase() ===
+        query.toLowerCase()
+    );
+
+  if (existing) {
+    return;
+  }
+
+  try {
+    const result =
+      await fetchJson(
+        `/facts/${encodeURIComponent(
+          query
+        )}`,
+        10000
+      );
+
+    const fact =
+      Array.isArray(result)
+        ? result[0]
+        : result;
+
+    if (!fact?._id) {
+      return;
+    }
+
+    mergeFacts([fact]);
+
+    applyFilters({
+      resetPage: true,
+    });
+
+    selectFact(
+      fact._id
+    );
+  } catch {
+    // No matching remote record.
+  }
+}
 
 function showList() {
   state.view =
@@ -973,15 +1078,26 @@ function showList() {
     "list";
 }
 
-function moveSelection(direction) {
+function moveSelection(
+  direction
+) {
   if (!state.filtered.length) {
     return;
   }
 
-  const columns =
+  let columns = 4;
+
+  if (
     window.innerWidth <= 900
-      ? 3
-      : 4;
+  ) {
+    columns = 3;
+  }
+
+  if (
+    window.innerWidth <= 520
+  ) {
+    columns = 2;
+  }
 
   let index =
     state.filtered.findIndex(
@@ -1023,10 +1139,6 @@ function moveSelection(direction) {
   );
 }
 
-/* =========================================================
-   ALEATORIO
-========================================================= */
-
 async function loadRandom() {
   const pool =
     state.filtered.length
@@ -1051,7 +1163,7 @@ async function loadRandom() {
 
   try {
     els.meta.textContent =
-      "Buscando un gato al azar…";
+      "Finding a random cat…";
 
     const result =
       await fetchJson(
@@ -1083,10 +1195,6 @@ async function loadRandom() {
     `;
   }
 }
-
-/* =========================================================
-   EVENTOS
-========================================================= */
 
 els.grid.addEventListener(
   "click",
@@ -1153,35 +1261,6 @@ els.pageNext.addEventListener(
 );
 
 document
-  .querySelectorAll(".chip")
-  .forEach((chip) => {
-    chip.addEventListener(
-      "click",
-      () => {
-        document
-          .querySelectorAll(
-            ".chip"
-          )
-          .forEach(
-            (item) =>
-              item.classList.remove(
-                "is-active"
-              )
-          );
-
-        chip.classList.add(
-          "is-active"
-        );
-
-        state.type =
-          chip.dataset.type;
-
-        applyFilters();
-      }
-    );
-  });
-
-document
   .querySelectorAll(".dpad-btn")
   .forEach((button) => {
     button.addEventListener(
@@ -1210,21 +1289,27 @@ document
   });
 
 document
-  .getElementById("btn-random")
+  .getElementById(
+    "btn-random"
+  )
   .addEventListener(
     "click",
     loadRandom
   );
 
 document
-  .getElementById("dock-random")
+  .getElementById(
+    "dock-random"
+  )
   .addEventListener(
     "click",
     loadRandom
   );
 
 document
-  .getElementById("btn-back")
+  .getElementById(
+    "btn-back"
+  )
   .addEventListener(
     "click",
     showList
@@ -1235,10 +1320,6 @@ els.backBtn.addEventListener(
   showList
 );
 
-/* =========================================================
-   MENÚ MÓVIL
-========================================================= */
-
 document
   .querySelectorAll(
     "[data-dock]"
@@ -1247,7 +1328,6 @@ document
     button.addEventListener(
       "click",
       () => {
-
         if (
           button.dataset.dock ===
           "catalog"
@@ -1263,13 +1343,13 @@ document
             "about";
 
           els.device.dataset.view =
-            "detail";
+            "about";
 
           els.detail.innerHTML = `
-            <div class="welcome">
+            <div class="welcome about-page">
 
               <p class="welcome-kicker">
-                Acerca de este dex
+                About this dex
               </p>
 
               <h2>
@@ -1277,23 +1357,20 @@ document
               </h2>
 
               <p>
-                Una enciclopedia felina
-                interactiva construida a
-                partir de una API pública
-                de hechos sobre gatos.
+                An interactive feline encyclopedia
+                built using a public API containing
+                facts about cats.
               </p>
 
               <p>
-                Cada registro recibe una
-                identidad visual dentro de
-                Catdex, con nombre, rasgo,
-                código y perfil felino.
+                Each record receives a visual identity
+                inside Catdex, including a name, trait,
+                code and feline profile.
               </p>
 
               <p>
-                La información del hecho
-                proviene de la API de
-                Cat Facts.
+                The factual information comes directly
+                from the Cat Facts API.
               </p>
 
             </div>
@@ -1302,10 +1379,6 @@ document
       }
     );
   });
-
-/* =========================================================
-   TECLADO
-========================================================= */
 
 window.addEventListener(
   "keydown",
@@ -1326,9 +1399,5 @@ window.addEventListener(
     }
   }
 );
-
-/* =========================================================
-   INICIAR CATDEX
-========================================================= */
 
 loadCatalog();

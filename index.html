@@ -1,116 +1,301 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Catdex — Enciclopedia de hechos felinos</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐱</text></svg>" />
-    <link rel="preconnect" href="https://catfacts.wohlbruck.dev" crossorigin />
+
+    <title>Catdex — Feline Facts Encyclopedia</title>
+
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐱</text></svg>"
+    />
+
+    <link
+      rel="preconnect"
+      href="https://catfacts.wohlbruck.dev"
+      crossorigin
+    />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <link
       href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Figtree:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+
     <link rel="stylesheet" href="styles.css" />
   </head>
+
   <body>
     <div class="stage">
       <div class="device" id="device" data-view="list">
+
         <header class="device-lid">
           <div class="lens" aria-hidden="true">
             <span class="lens-glass"></span>
           </div>
+
           <div class="status-leds" aria-hidden="true">
             <span class="led led-red"></span>
             <span class="led led-amber"></span>
             <span class="led led-green"></span>
           </div>
+
           <div class="brand">
-            <p class="brand-kicker">Enciclopedia de campo</p>
+            <p class="brand-kicker">Field Encyclopedia</p>
             <h1>CATDEX <span>02</span></h1>
           </div>
-          <button class="icon-btn mobile-only" id="back-btn" type="button" aria-label="Volver al catálogo">
+
+          <button
+            class="icon-btn mobile-only"
+            id="back-btn"
+            type="button"
+            aria-label="Back to catalog"
+          >
             ←
           </button>
         </header>
 
         <div class="device-body">
-          <section class="panel panel-catalog" aria-label="Catálogo de hechos">
+
+          <section
+            class="panel panel-catalog"
+            aria-label="Cat facts catalog"
+          >
             <div class="screen">
-              <form class="search-bar" id="search-form" role="search">
-                <label class="sr-only" for="search-input">Buscar hechos</label>
+
+              <form
+                class="search-bar"
+                id="search-form"
+                role="search"
+              >
+                <label
+                  class="sr-only"
+                  for="search-input"
+                >
+                  Search facts
+                </label>
+
                 <input
                   id="search-input"
                   type="search"
-                  placeholder="Busca un hecho, tipo o ID…"
+                  placeholder="Search a fact, trait or ID…"
                   autocomplete="off"
                 />
-                <button type="submit">Buscar</button>
+
+                <button type="submit">
+                  Search
+                </button>
               </form>
 
-              <p class="catalog-meta" id="catalog-meta">Cargando el archivo…</p>
-              <div class="catalog-grid" id="catalog-grid"></div>
-              <p class="empty-state" id="empty-state" hidden>Ningún hecho coincide con esa búsqueda.</p>
-              <div class="pager" id="pager" hidden>
-                <button type="button" id="page-prev">Anterior</button>
-                <span id="page-label">1 / 1</span>
-                <button type="button" id="page-next">Siguiente</button>
+              <p
+                class="catalog-meta"
+                id="catalog-meta"
+              >
+                Loading archive…
+              </p>
+
+              <div
+                class="catalog-grid"
+                id="catalog-grid"
+              ></div>
+
+              <p
+                class="empty-state"
+                id="empty-state"
+                hidden
+              >
+                No facts match your search.
+              </p>
+
+              <div
+                class="pager"
+                id="pager"
+                hidden
+              >
+                <button
+                  type="button"
+                  id="page-prev"
+                >
+                  Previous
+                </button>
+
+                <span id="page-label">
+                  1 / 1
+                </span>
+
+                <button
+                  type="button"
+                  id="page-next"
+                >
+                  Next
+                </button>
               </div>
+
             </div>
           </section>
 
-          <div class="hinge" aria-hidden="true">
-            <span></span><span></span><span></span>
+          <div
+            class="hinge"
+            aria-hidden="true"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
 
-          <section class="panel panel-detail" aria-label="Detalle del hecho">
+          <section
+            class="panel panel-detail"
+            aria-label="Cat fact details"
+          >
             <div class="screen screen-wiki">
-              <article class="wiki" id="detail">
+
+              <article
+                class="wiki"
+                id="detail"
+              >
                 <div class="welcome">
-                  <p class="welcome-kicker">Elige una entrada</p>
-                  <h2>Pokedex de gatos</h2>
-                  <p>
-                    Consulta notas del archivo Cat Facts. Busca por texto o pulsa
-                    Aleatorio para ver otra entrada.
+
+                  <p class="welcome-kicker">
+                    Select an entry
                   </p>
+
+                  <h2>
+                    Catdex Encyclopedia
+                  </h2>
+
+                  <p>
+                    Explore feline facts from the
+                    Cat Facts public API. Search the
+                    archive or select a cat to open
+                    its complete record.
+                  </p>
+
                 </div>
               </article>
+
             </div>
           </section>
+
         </div>
 
         <footer class="device-controls">
-          <div class="dpad" aria-hidden="false">
-            <button class="dpad-btn dpad-up" data-dir="up" type="button" aria-label="Fila anterior">▲</button>
-            <button class="dpad-btn dpad-left" data-dir="left" type="button" aria-label="Entrada anterior">◀</button>
-            <button class="dpad-btn dpad-center" data-dir="select" type="button" aria-label="Abrir entrada">●</button>
-            <button class="dpad-btn dpad-right" data-dir="right" type="button" aria-label="Entrada siguiente">▶</button>
-            <button class="dpad-btn dpad-down" data-dir="down" type="button" aria-label="Fila siguiente">▼</button>
+
+          <div
+            class="dpad"
+            aria-hidden="false"
+          >
+            <button
+              class="dpad-btn dpad-up"
+              data-dir="up"
+              type="button"
+              aria-label="Previous row"
+            >
+              ▲
+            </button>
+
+            <button
+              class="dpad-btn dpad-left"
+              data-dir="left"
+              type="button"
+              aria-label="Previous entry"
+            >
+              ◀
+            </button>
+
+            <button
+              class="dpad-btn dpad-center"
+              data-dir="select"
+              type="button"
+              aria-label="Open entry"
+            >
+              ●
+            </button>
+
+            <button
+              class="dpad-btn dpad-right"
+              data-dir="right"
+              type="button"
+              aria-label="Next entry"
+            >
+              ▶
+            </button>
+
+            <button
+              class="dpad-btn dpad-down"
+              data-dir="down"
+              type="button"
+              aria-label="Next row"
+            >
+              ▼
+            </button>
           </div>
 
-          <div class="speaker" aria-hidden="true">
-            <span></span><span></span><span></span><span></span>
+          <div
+            class="speaker"
+            aria-hidden="true"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
           </div>
 
           <div class="ab-cluster">
-            <button class="round-btn btn-b" id="btn-back" type="button">
-              B<span>Atrás</span>
+
+            <button
+              class="round-btn btn-b"
+              id="btn-back"
+              type="button"
+            >
+              B
+              <span>Back</span>
             </button>
-            <button class="round-btn btn-a" id="btn-random" type="button">
-              A<span>Aleatorio</span>
+
+            <button
+              class="round-btn btn-a"
+              id="btn-random"
+              type="button"
+            >
+              A
+              <span>Random</span>
             </button>
+
           </div>
+
         </footer>
+
       </div>
     </div>
 
-    <nav class="mobile-dock" aria-label="Acciones móviles">
-      <button type="button" data-dock="catalog">Catálogo</button>
-      <button type="button" id="dock-random">Aleatorio</button>
-      <button type="button" data-dock="about">Acerca de</button>
+    <nav
+      class="mobile-dock"
+      aria-label="Mobile actions"
+    >
+      <button
+        type="button"
+        data-dock="catalog"
+      >
+        Catalog
+      </button>
+
+      <button
+        type="button"
+        id="dock-random"
+      >
+        Random
+      </button>
+
+      <button
+        type="button"
+        data-dock="about"
+      >
+        About
+      </button>
     </nav>
 
-    <script src="app.js?v=13"></script>
+    <script src="app.js?v=14"></script>
   </body>
 </html>

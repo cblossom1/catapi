@@ -33,10 +33,24 @@ body {
 body {
   font-family: "Figtree", system-ui, sans-serif;
   color: var(--ink);
+
   background:
-    radial-gradient(circle at 20% 10%, #3b1010 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, #1a0a0a 0%, transparent 45%),
+    radial-gradient(
+      circle at 20% 10%,
+      #3b1010 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 90% 80%,
+      #1a0a0a 0%,
+      transparent 45%
+    ),
     #140808;
+}
+
+button,
+input {
+  font: inherit;
 }
 
 .sr-only {
@@ -54,6 +68,10 @@ body {
   display: none;
 }
 
+/* =========================================================
+   DEVICE
+========================================================= */
+
 .stage {
   min-height: 100vh;
   display: flex;
@@ -64,13 +82,25 @@ body {
 
 .device {
   width: min(1120px, 100%);
+  height: min(760px, calc(100vh - 36px));
   max-height: calc(100vh - 24px);
+
   background:
-    linear-gradient(180deg, var(--shell-hot) 0%, var(--shell) 42%, var(--shell-deep) 100%);
+    linear-gradient(
+      180deg,
+      var(--shell-hot) 0%,
+      var(--shell) 42%,
+      var(--shell-deep) 100%
+    );
+
   border: 3px solid #6d1212;
   border-radius: var(--radius-device);
-  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow:
+    var(--shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
   padding: 14px 16px 12px;
+
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -81,6 +111,7 @@ body {
   align-items: center;
   gap: 14px;
   padding: 4px 10px 2px;
+  flex-shrink: 0;
 }
 
 .lens {
@@ -89,7 +120,10 @@ body {
   border-radius: 50%;
   background: #dbeafe;
   border: 6px solid #eceff4;
-  box-shadow: inset 0 0 0 4px #3b82c4, 0 2px 0 #7f1d1d;
+  box-shadow:
+    inset 0 0 0 4px #3b82c4,
+    0 2px 0 #7f1d1d;
+
   display: grid;
   place-items: center;
   flex-shrink: 0;
@@ -99,7 +133,13 @@ body {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff, #60a5fa 40%, #1d4ed8);
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      #fff,
+      #60a5fa 40%,
+      #1d4ed8
+    );
 }
 
 .status-leds {
@@ -111,12 +151,21 @@ body {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.35);
+  box-shadow:
+    inset 0 -1px 2px rgba(0, 0, 0, 0.35);
 }
 
-.led-red { background: #ff8a80; }
-.led-amber { background: #ffd54f; }
-.led-green { background: #69f0ae; }
+.led-red {
+  background: #ff8a80;
+}
+
+.led-amber {
+  background: #ffd54f;
+}
+
+.led-green {
+  background: #69f0ae;
+}
 
 .brand {
   margin-left: 4px;
@@ -144,6 +193,10 @@ body {
   font-size: 0.72em;
 }
 
+/* =========================================================
+   BODY / PANELS
+========================================================= */
+
 .device-body {
   display: flex;
   align-items: stretch;
@@ -155,16 +208,26 @@ body {
 .panel {
   flex: 1;
   min-width: 0;
+  min-height: 0;
 }
 
 .hinge {
   width: 28px;
   flex-shrink: 0;
-  background: linear-gradient(90deg, #7f1515, #4a0c0c 45%, #9a1c1c);
+
+  background:
+    linear-gradient(
+      90deg,
+      #7f1515,
+      #4a0c0c 45%,
+      #9a1c1c
+    );
+
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
   align-items: center;
+
   border-radius: 8px;
   margin: 0 6px;
 }
@@ -183,33 +246,46 @@ body {
   border: 10px solid var(--screen-bezel);
   border-radius: 18px;
   padding: 14px;
+
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: inset 0 0 0 2px #3f3a36;
+
+  box-shadow:
+    inset 0 0 0 2px #3f3a36;
+
   overflow: hidden;
 }
+
+/* =========================================================
+   SEARCH
+========================================================= */
 
 .search-bar {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .search-bar input {
   flex: 1;
+  min-width: 0;
+
   border: 1px solid #c9c1b2;
   background: #fffdf8;
   border-radius: 999px;
   padding: 9px 14px;
-  font: inherit;
-  min-width: 0;
+}
+
+.search-bar input:focus {
+  outline: 2px solid rgba(224, 122, 61, 0.25);
+  border-color: var(--cat);
 }
 
 .search-bar button,
 .chip {
   border: 0;
   cursor: pointer;
-  font: inherit;
 }
 
 .search-bar button {
@@ -220,35 +296,24 @@ body {
   font-weight: 600;
 }
 
-.type-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.chip {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 5px 11px;
-  color: var(--muted);
-}
-
-.chip.is-active {
-  background: var(--ink);
-  color: #fff;
-  border-color: var(--ink);
-}
-
 .catalog-meta {
   margin: 0;
   font-size: 0.78rem;
   color: var(--muted);
+  flex-shrink: 0;
 }
+
+/* =========================================================
+   CATALOG
+========================================================= */
 
 .catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(86px, 1fr)
+  );
+
   gap: 10px;
   overflow: auto;
   padding-right: 4px;
@@ -263,11 +328,19 @@ body {
   border-radius: 16px;
   padding: 8px 6px 10px;
   cursor: pointer;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.04);
+
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .entry-card:hover,
@@ -278,16 +351,31 @@ body {
   transform: translateY(-1px);
 }
 
+.entry-card:hover {
+  box-shadow:
+    0 5px 14px rgba(0, 0, 0, 0.08);
+}
+
 .entry-card.skeleton {
   min-height: 96px;
-  background: linear-gradient(90deg, #f4eee4 25%, #fff8ee 50%, #f4eee4 75%);
+
+  background:
+    linear-gradient(
+      90deg,
+      #f4eee4 25%,
+      #fff8ee 50%,
+      #f4eee4 75%
+    );
+
   background-size: 200% 100%;
   animation: shimmer 1.1s linear infinite;
   pointer-events: none;
 }
 
 @keyframes shimmer {
-  to { background-position: -200% 0; }
+  to {
+    background-position: -200% 0;
+  }
 }
 
 .entry-card img {
@@ -304,20 +392,47 @@ body {
   color: var(--muted);
 }
 
+.entry-card .cat-name {
+  font-family: "Oxanium", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.1;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .type-dot {
   font-size: 0.62rem;
   font-weight: 700;
   text-transform: capitalize;
   color: var(--cat);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.type-dot.dog { color: var(--dog); }
-.type-dot.horse { color: var(--horse); }
+.type-dot.dog {
+  color: var(--dog);
+}
+
+.type-dot.horse {
+  color: var(--horse);
+}
 
 .empty-state {
   margin: 12px 4px;
   color: var(--muted);
 }
+
+/* =========================================================
+   PAGINATION
+========================================================= */
 
 .pager {
   display: flex;
@@ -326,6 +441,7 @@ body {
   gap: 8px;
   margin-top: auto;
   padding-top: 8px;
+  flex-shrink: 0;
 }
 
 .pager[hidden] {
@@ -337,7 +453,6 @@ body {
   background: #fff;
   border-radius: 999px;
   padding: 6px 12px;
-  font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
@@ -353,23 +468,40 @@ body {
   color: var(--muted);
 }
 
+/* =========================================================
+   DETAIL / WIKI
+========================================================= */
+
 .screen-wiki {
   background: var(--paper);
+  min-height: 0;
 }
 
 .wiki {
   height: 100%;
+  min-height: 0;
   overflow: auto;
 }
 
-.welcome,
-.wiki-body {
-  padding: 8px 6px 12px;
+.welcome {
+  min-height: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  padding: 30px 12%;
 }
 
 .welcome-kicker,
 .wiki-kicker {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
+
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -378,7 +510,8 @@ body {
 
 .welcome h2,
 .wiki h2 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
+
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.8rem;
   line-height: 1.15;
@@ -387,19 +520,73 @@ body {
 .welcome p,
 .wiki-text {
   margin: 0;
+
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.02rem;
   line-height: 1.55;
 }
 
+.welcome p:not(.welcome-kicker) {
+  max-width: 540px;
+}
+
+.about-page {
+  gap: 0;
+}
+
+.about-page p:not(.welcome-kicker) {
+  margin-top: 12px;
+}
+
+/* =========================================================
+   RECORD STRUCTURE
+========================================================= */
+
+.wiki-body {
+  padding: 8px 6px 20px;
+}
+
+.record-header {
+  margin-bottom: 18px;
+}
+
+.record-header .wiki-kicker {
+  color: var(--cat);
+  font-weight: 700;
+}
+
+.record-header h2 {
+  margin-bottom: 4px;
+}
+
+.record-trait {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.record-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 230px) 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* =========================================================
+   INFOBOX
+========================================================= */
+
 .infobox {
-  float: right;
-  width: min(230px, 46%);
-  margin: 0 0 12px 14px;
+  width: 100%;
+
   background: #fff;
   border: 1px solid #e4d8c4;
   border-radius: 12px;
   overflow: hidden;
+
+  box-shadow:
+    0 3px 12px rgba(70, 40, 15, 0.04);
 }
 
 .infobox img {
@@ -418,19 +605,25 @@ body {
 .infobox div {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  padding: 5px 0;
+  align-items: flex-start;
+  gap: 12px;
+
+  padding: 6px 0;
   border-top: 1px solid #f0e7d8;
+
   font-size: 0.78rem;
 }
 
 .infobox dt {
   color: var(--muted);
+  flex-shrink: 0;
 }
 
 .infobox dd {
   margin: 0;
   font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .type-badge {
@@ -442,17 +635,66 @@ body {
   text-transform: capitalize;
 }
 
-.type-badge.cat { background: var(--cat); }
-.type-badge.dog { background: var(--dog); }
-.type-badge.horse { background: var(--horse); }
+.type-badge.cat {
+  background: var(--cat);
+}
+
+.type-badge.dog {
+  background: var(--dog);
+}
+
+.type-badge.horse {
+  background: var(--horse);
+}
+
+/* =========================================================
+   DESCRIPTION
+========================================================= */
+
+.description-section {
+  min-width: 0;
+}
+
+.section-title {
+  margin: 2px 0 10px;
+
+  font-family: "Oxanium", sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
+
+.description-section .wiki-text {
+  padding: 16px 17px;
+
+  background: rgba(255, 255, 255, 0.7);
+
+  border-left: 3px solid var(--cat);
+  border-radius: 0 10px 10px 0;
+
+  overflow-wrap: anywhere;
+}
+
+.description-note {
+  margin: 8px 0 0;
+
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-style: italic;
+}
+
+/* =========================================================
+   STATS
+========================================================= */
 
 .stats {
+  margin-top: 22px;
   clear: both;
-  margin-top: 16px;
 }
 
 .stats h3 {
   margin: 0 0 10px;
+
   font-family: "Oxanium", sans-serif;
   font-size: 0.82rem;
   letter-spacing: 0.08em;
@@ -461,9 +703,10 @@ body {
 
 .stat {
   display: grid;
-  grid-template-columns: 92px 1fr 36px;
+  grid-template-columns: 100px 1fr 36px;
   gap: 8px;
   align-items: center;
+
   margin-bottom: 8px;
   font-size: 0.78rem;
 }
@@ -479,37 +722,61 @@ body {
   display: block;
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, #e07a3d, #c62828);
+
+  background:
+    linear-gradient(
+      90deg,
+      #e07a3d,
+      #c62828
+    );
+
   border-radius: inherit;
-  transition: width 0.45s ease;
+
+  transition:
+    width 0.45s ease;
 }
 
 .wiki-note {
-  margin-top: 16px;
+  margin-top: 18px;
   padding-top: 12px;
+
   border-top: 1px solid var(--line);
+
   color: var(--muted);
   font-size: 0.8rem;
+  line-height: 1.5;
 }
+
+/* =========================================================
+   CONTROLS
+========================================================= */
 
 .device-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   padding: 4px 16px 6px;
+
   flex-shrink: 0;
 }
 
 .dpad {
   width: 86px;
   height: 86px;
+
   display: grid;
+
   grid-template-areas:
     ". up ."
     "left center right"
     ". down .";
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
+
+  grid-template-columns:
+    1fr 1fr 1fr;
+
+  grid-template-rows:
+    1fr 1fr 1fr;
 }
 
 .dpad-btn {
@@ -520,11 +787,30 @@ body {
   cursor: pointer;
 }
 
-.dpad-up { grid-area: up; border-radius: 6px 6px 0 0; }
-.dpad-down { grid-area: down; border-radius: 0 0 6px 6px; }
-.dpad-left { grid-area: left; border-radius: 6px 0 0 6px; }
-.dpad-right { grid-area: right; border-radius: 0 6px 6px 0; }
-.dpad-center { grid-area: center; background: #444; }
+.dpad-up {
+  grid-area: up;
+  border-radius: 6px 6px 0 0;
+}
+
+.dpad-down {
+  grid-area: down;
+  border-radius: 0 0 6px 6px;
+}
+
+.dpad-left {
+  grid-area: left;
+  border-radius: 6px 0 0 6px;
+}
+
+.dpad-right {
+  grid-area: right;
+  border-radius: 0 6px 6px 0;
+}
+
+.dpad-center {
+  grid-area: center;
+  background: #444;
+}
 
 .speaker {
   display: flex;
@@ -538,7 +824,8 @@ body {
   height: 4px;
   border-radius: 999px;
   background: #6d1515;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    inset 0 1px 1px rgba(0, 0, 0, 0.4);
 }
 
 .ab-cluster {
@@ -549,17 +836,23 @@ body {
 .round-btn {
   width: 54px;
   height: 54px;
+
   border-radius: 50%;
   border: 0;
   cursor: pointer;
+
   font-family: "Oxanium", sans-serif;
   font-weight: 800;
   color: #fff;
-  box-shadow: 0 4px 0 #4a1010;
+
+  box-shadow:
+    0 4px 0 #4a1010;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
   line-height: 1;
 }
 
@@ -570,8 +863,17 @@ body {
   margin-top: 3px;
 }
 
-.btn-a { background: #3b82f6; }
-.btn-b { background: #22c55e; }
+.btn-a {
+  background: #3b82f6;
+}
+
+.btn-b {
+  background: #22c55e;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
 
 .mobile-dock {
   display: none;
@@ -589,7 +891,12 @@ body {
   color: #9f1239;
 }
 
+/* =========================================================
+   TABLET / MOBILE
+========================================================= */
+
 @media (max-width: 900px) {
+
   body {
     background: #f4eee4;
   }
@@ -602,18 +909,24 @@ body {
   .device {
     width: 100%;
     min-height: 100vh;
+    height: auto;
     max-height: none;
+
     border: 0;
     border-radius: 0;
     box-shadow: none;
+
     background: #f7f1e7;
+
     padding: 0 0 76px;
     gap: 0;
   }
 
   .device-lid {
     background: #d97746;
+
     padding: 14px 16px;
+
     position: sticky;
     top: 0;
     z-index: 4;
@@ -629,15 +942,21 @@ body {
 
   .mobile-only {
     display: inline-flex;
+
     margin-left: auto;
+
     border: 0;
     background: rgba(255, 255, 255, 0.2);
     color: #fff;
+
     width: 36px;
     height: 36px;
+
     border-radius: 50%;
+
     align-items: center;
     justify-content: center;
+
     cursor: pointer;
   }
 
@@ -660,24 +979,37 @@ body {
     border-radius: 0;
     box-shadow: none;
     background: transparent;
+
     padding: 14px 14px 20px;
+
     min-height: calc(100vh - 150px);
   }
 
-  .device[data-view="list"] .panel-detail,
-  .device[data-view="detail"] .panel-catalog,
-  .device[data-view="about"] .panel-catalog {
+  .device[data-view="list"]
+    .panel-detail,
+  .device[data-view="detail"]
+    .panel-catalog,
+  .device[data-view="about"]
+    .panel-catalog {
     display: none;
   }
 
   .catalog-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns:
+      repeat(3, 1fr);
     gap: 12px;
   }
 
   .entry-card {
     background: #fff;
-    box-shadow: 0 8px 18px rgba(80, 40, 16, 0.06);
+
+    box-shadow:
+      0 8px 18px rgba(
+        80,
+        40,
+        16,
+        0.06
+      );
   }
 
   .entry-card img {
@@ -685,80 +1017,300 @@ body {
     height: 72px;
   }
 
+  .welcome {
+    min-height: calc(100vh - 150px);
+    height: auto;
+
+    padding:
+      30px
+      8%;
+
+    justify-content: center;
+  }
+
+  .record-layout {
+    grid-template-columns:
+      minmax(160px, 200px)
+      1fr;
+
+    gap: 16px;
+  }
+
   .infobox {
-    float: none;
     width: 100%;
-    margin: 0 0 16px;
   }
 
   .mobile-dock {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+
+    grid-template-columns:
+      repeat(3, 1fr);
+
     position: fixed;
+
     left: 0;
     right: 0;
     bottom: 0;
+
     background: #fff;
-    border-top: 1px solid #eadfcf;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+
+    border-top:
+      1px solid #eadfcf;
+
+    padding:
+      8px
+      10px
+      calc(
+        8px +
+        env(safe-area-inset-bottom)
+      );
+
     z-index: 6;
   }
 
   .mobile-dock button {
     border: 0;
     background: transparent;
+
     font: inherit;
     font-weight: 700;
+
     color: #8a5a3b;
+
     padding: 10px;
+
     cursor: pointer;
   }
 }
 
-@media (min-width: 901px) and (max-width: 1100px) {
+/* =========================================================
+   SMALL TABLET
+========================================================= */
+
+@media (min-width: 901px)
+  and (max-width: 1100px) {
+
   .catalog-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns:
+      repeat(3, 1fr);
+  }
+
+  .record-layout {
+    grid-template-columns:
+      190px 1fr;
   }
 
   .infobox {
-    width: 200px;
+    width: 190px;
   }
 }
 
 /* =========================================================
-   IDENTIDAD DE LOS GATOS
+   SMALL PHONES
 ========================================================= */
 
-.entry-card .cat-name {
-  font-family: "Oxanium", sans-serif;
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: var(--ink);
-  line-height: 1.1;
-  text-align: center;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+@media (max-width: 520px) {
+
+  .device-lid {
+    padding:
+      12px
+      14px;
+  }
+
+  .brand h1 {
+    font-size: 1.3rem;
+  }
+
+  .brand-kicker {
+    font-size: 0.62rem;
+  }
+
+  .screen {
+    padding:
+      12px
+      10px
+      18px;
+  }
+
+  .search-bar {
+    gap: 6px;
+  }
+
+  .search-bar input {
+    padding:
+      9px
+      12px;
+
+    font-size: 0.88rem;
+  }
+
+  .search-bar button {
+    padding:
+      9px
+      11px;
+
+    font-size: 0.82rem;
+  }
+
+  .catalog-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+
+    gap: 10px;
+  }
+
+  .entry-card img {
+    width: 68px;
+    height: 68px;
+  }
+
+  .welcome {
+    min-height:
+      calc(100vh - 145px);
+
+    padding:
+      25px
+      8%;
+  }
+
+  .welcome h2,
+  .wiki h2 {
+    font-size: 1.55rem;
+  }
+
+  .welcome p,
+  .wiki-text {
+    font-size: 0.96rem;
+    line-height: 1.5;
+  }
+
+  .wiki-body {
+    padding:
+      8px
+      2px
+      24px;
+  }
+
+  .record-header {
+    margin-bottom: 16px;
+  }
+
+  .record-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .infobox {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .infobox img {
+    max-height: 280px;
+    object-fit: contain;
+  }
+
+  .description-section {
+    width: 100%;
+  }
+
+  .description-section .wiki-text {
+    padding:
+      13px
+      14px;
+  }
+
+  .stats {
+    margin-top: 20px;
+  }
+
+  .stat {
+    grid-template-columns:
+      82px
+      1fr
+      30px;
+
+    gap: 6px;
+
+    font-size: 0.72rem;
+  }
+
+  .wiki-note {
+    font-size: 0.75rem;
+  }
+
+  .pager button {
+    padding:
+      6px
+      10px;
+
+    font-size: 0.78rem;
+  }
 }
 
-.entry-card .type-dot {
-  text-align: center;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
 
-.wiki .wiki-kicker + h2 {
-  margin-top: 4px;
-}
+@media (max-width: 380px) {
 
-.wiki-body > .wiki-kicker {
-  color: var(--cat);
-  font-weight: 700;
-}
+  .catalog-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
 
-.infobox dd {
-  text-transform: capitalize;
+  .entry-card {
+    padding:
+      7px
+      5px
+      9px;
+  }
+
+  .entry-card img {
+    width: 62px;
+    height: 62px;
+  }
+
+  .search-bar button {
+    padding:
+      8px
+      9px;
+  }
+
+  .welcome {
+    min-height:
+      calc(100vh - 140px);
+
+    padding:
+      20px
+      6%;
+  }
+
+  .welcome h2,
+  .wiki h2 {
+    font-size: 1.4rem;
+  }
+
+  .welcome p,
+  .wiki-text {
+    font-size: 0.92rem;
+  }
+
+  .stat {
+    grid-template-columns:
+      70px
+      1fr
+      28px;
+
+    font-size: 0.68rem;
+  }
+
+  .mobile-dock button {
+    padding:
+      9px
+      5px;
+
+    font-size: 0.78rem;
+  }
 }
