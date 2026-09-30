@@ -15,7 +15,7 @@ Caja de búsqueda
 ----------------
 
   lincoln        coincide con el hecho de Mary Todd Lincoln
-  Lincol         también coincide (substring)
+  Lincol         también coincide (substring) 
   todd lincoln   no coincide (esas palabras no están juntas)
 
 
